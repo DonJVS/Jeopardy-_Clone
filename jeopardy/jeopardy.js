@@ -1,82 +1,106 @@
-// categories is the main data structure for the app; it looks like this:
-
-//  [
-//    { title: "Math",
-//      clues: [
-//        {question: "2+2", answer: 4, showing: null},
-//        {question: "1+1", answer: 2, showing: null}
-//        ...
-//      ],
-//    },
-//    { title: "Literature",
-//      clues: [
-//        {question: "Hamlet Author", answer: "Shakespeare", showing: null},
-//        {question: "Bell Jar Author", answer: "Plath", showing: null},
-//        ...
-//      ],
-//    },
-//    ...
-//  ]
 
 let categories = [];
 
+const API_BASE_URL = 'https://rithm-jeopardy.herokuapp.com/api';
+const NUM_CATEGORIES = 6;
+const NUM_QUESTIONS_PER_CAT = 5;
 
-/** Get NUM_CATEGORIES random category from API.
- *
- * Returns array of category ids
- */
+async function getCategoryIds() {
+    const response = await axios.get(`${API_BASE_URL}/categories`, {
+      params: { count: 100 }
+    });
+    const data = response.data;
+    //using the lodash library for _.sampleSize() to randomize the categories that will be added to the array
+    const randomIDs = _.sampleSize(data, NUM_CATEGORIES);
+    //defining variable categoryIDs to map the extracted ids to an array
+    const categoryIDs = randomIDs.map(item => item.id);
+    console.log(categoryIDs);
+    return categoryIDs;
+};
 
-function getCategoryIds() {
+async function getCategory(catId) {
+    let response = await axios.get(`${API_BASE_URL}/category`, {
+      params: { id: catId }
+    });
+    let catObj = response.data;
+    console.log(catObj);
+    //defining variable to get a random clue from the object and map it to the array
+    let randomClue = _.sampleSize(catObj.clues, NUM_QUESTIONS_PER_CAT).map(clue => ({
+      question: clue.question,
+      answer: clue.answer,
+      showing: null
+    }));
+    //returns the title of the category and the randomly selected clues from the category
+    return {title: catObj.title, clues: randomClue}; 
 }
-
-/** Return object with data about a category:
- *
- *  Returns { title: "Math", clues: clue-array }
- *
- * Where clue-array is:
- *   [
- *      {question: "Hamlet Author", answer: "Shakespeare", showing: null},
- *      {question: "Bell Jar Author", answer: "Plath", showing: null},
- *      ...
- *   ]
- */
-
-function getCategory(catId) {
-}
-
-/** Fill the HTML table#jeopardy with the categories & cells for questions.
- *
- * - The <thead> should be filled w/a <tr>, and a <td> for each category
- * - The <tbody> should be filled w/NUM_QUESTIONS_PER_CAT <tr>s,
- *   each with a question for each category in a <td>
- *   (initally, just show a "?" where the question/answer would go.)
- */
 
 async function fillTable() {
+  hideLoadingView();
+  //defining variables to add html elements for the table
+  const $table = $('<table id="jeopardy"></table>');
+  const $thead = $('<thead></thead>');
+  const $headerRow = $('<tr></tr>');
+  const $tbody = $('<tbody></tbody>');
+  //takes each category in the array and appends the title to the header row
+  categories.forEach(cat => {
+    const $th = $('<th></th>').text(cat.title);
+    $headerRow.append($th);
+  });
+  //appends the row to the header
+  $thead.append($headerRow);
+  //appends the header to the table
+  $table.append($thead);
+  //loops through 5 times to create 5 rows
+  for (let i = 0; i < NUM_QUESTIONS_PER_CAT; i++) {
+    const $row = $('<tr></tr>');
+    //loops through 6 times to create 6 columns each with a td element
+    for (let j = 0; j < NUM_CATEGORIES; j++) {
+      //defining variable to set the td text to a ?
+      const $cell = $('<td></td>').text('?')
+      //sets the data attributes for both the category and clue
+        .data('catIndex', j)
+        .data('clueIndex', i)
+        //attaches the click event handler whenever a cell is click which calls the handleClick function
+        .on('click', handleClick);
+        //appends the cells to the row
+        $row.append($cell);
+    }
+    //appends the row to the body of the table
+    $tbody.append($row);
+  }
+  //appends the table body to the table
+  $table.append($tbody);
+  // appends the table to the body of the html
+  $('body').append($table);
 }
-
-/** Handle clicking on a clue: show the question or answer.
- *
- * Uses .showing property on clue to determine what to show:
- * - if currently null, show question & set .showing to "question"
- * - if currently "question", show answer & set .showing to "answer"
- * - if currently "answer", ignore click
- * */
 
 function handleClick(evt) {
+  const $cell = $(evt.target);
+  const catIndex = $cell.data('catIndex');
+  const clueIndex = $cell.data('clueIndex');
+  let clue = categories[catIndex].clues[clueIndex];
+  //when the cell is clicked, and there is nothing showing, update the text to show the question and add class of question
+  if (clue.showing === null) {
+    $cell.text(clue.question).addClass('question');
+    clue.showing = 'question';
+    //if the clue shows a question and is clicked, update the text to show the answer and replace the question class with answer
+  } else if (clue.showing === 'question') {
+    $cell.text(clue.answer).removeClass('question').addClass('answer');
+    clue.showing = 'answer';
+  }
 }
 
-/** Wipe the current Jeopardy board, show the loading spinner,
- * and update the button used to fetch data.
- */
+// Wipe the current Jeopardy boardand update the button used to fetch data.
 
 function showLoadingView() {
-
+  $('#jeopardy').remove();
+  $('body').append('<p id="loading">Loading...</p>');
 }
-
-/** Remove the loading spinner and update the button used to fetch data. */
+/** update the button used to fetch data. */
 
 function hideLoadingView() {
+  $('#loading').remove();
+  $('#start').text('Restart');
 }
 
 /** Start game:
@@ -87,12 +111,20 @@ function hideLoadingView() {
  * */
 
 async function setupAndStart() {
+  let loadGame = $('#start').text() === "loading...";
+  if (!loadGame) {
+    showLoadingView();
+    let catIds = await getCategoryIds();
+    categories = [];
+    for (let catId of catIds) {
+      categories.push(await getCategory(catId));
+    }
+    fillTable();
+  }
 }
 
 /** On click of start / restart button, set up game. */
-
-// TODO
-
-/** On page load, add event handler for clicking clues */
-
-// TODO
+$(document).ready(function() {
+  $('body').append('<button id="start">Start Game</button>');
+  $('#start').on('click', setupAndStart);
+});

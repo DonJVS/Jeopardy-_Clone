@@ -1,7 +1,65 @@
-/* some colors you may find useful:
-  #115ff4
-  #060ce9
-  #28a200
-  #8d2ab5
-  #74119c
-*/
+body {
+  background-color: #115ff4; /*blue background color*/
+}
+
+/* Style for the table container */
+#jeopardy {
+  width: 80%; /* Set to 80% for better appearance */
+  border-collapse: collapse;
+  margin: 20px auto;
+  font-family: Arial, sans-serif;
+  table-layout: fixed; /* Ensures the table columns have fixed width */
+}
+
+/* Style for the table headers */
+#jeopardy th {
+  background-color: #28a200; /* Green background */
+  color: white; /* White text */
+  padding: 10px;
+  text-align: center;
+  border: 1px solid white; /* White border */
+}
+
+/* Style for the table cells */
+#jeopardy td {
+  background-color: #060ce9; /* Blue background */
+  color: white; /* White text */
+  padding: 20px;
+  text-align: center;
+  border: 1px solid white; /* white border */
+  cursor: pointer; /* Pointer cursor to indicate clickability */
+  word-wrap: break-word; /* Ensures text wraps within the cell */
+}
+
+/* Style for hover effect on cells */
+#jeopardy td:hover {
+  background-color: #74119c; /* Purple color on hover */
+}
+
+/* Style for the question and answer text */
+.question {
+  font-weight: bold; /* Bold text for questions */
+}
+
+#jeopardy td.answer {
+  font-weight: bold; /* Bold text for questions */
+  background-color: #28a200; /* green cell background for answer*/
+  color: white; /* Wite text for answers */
+}
+
+#start {
+  display: block;
+  margin: 20px auto; /* Center horizontally */
+  padding: 10px 20px;
+  font-size: 16px;
+  font-weight: bold;
+  background-color: #28a200; /*green background color*/
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer; /* Pointer cursor to indicate clickability */
+}
+
+#start:hover {
+  background-color: #74119c; /*purple background color on hover*/
+}
